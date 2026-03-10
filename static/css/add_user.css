@@ -1,0 +1,64 @@
+.table-responsive {
+    margin-top: 20px;
+    overflow-x: auto;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.user-table th {
+    background-color: #f8f9fa;
+    color: #333;
+    padding: 15px;
+    border-bottom: 2px solid #eee;
+    font-weight: 600;
+}
+
+.user-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+    color: #555;
+}
+
+.user-table tr:hover {
+    background-color: #fdfdfd;
+}
+
+.badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: bold;
+    text-transform: capitalize;
+}
+
+.badge.admin {
+    background-color: #ffeaea;
+    color: #e74c3c;
+}
+
+.badge.user {
+    background-color: #eaf4ff;
+    color: #3498db;
+}
+
+.btn-delete {
+    background: none;
+    border: 1px solid #e74c3c;
+    color: #e74c3c;
+    padding: 5px 12px;
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+
+.btn-delete:hover {
+    background-color: #e74c3c;
+    color: white;
+}

@@ -1,24 +1,73 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/css/add_user.css">
+    <title>Add User</title>
+</head>
+<body>
+    {% extends "base.html" %}
 
-{% block title %}Add User | Ershad{% endblock %}
+{% block title %}Manage Users | Ershad{% endblock %}
 
 {% block content %}
-<section class="panel narrow">
-    <h1>Add user</h1>
-    <form method="POST" class="form-grid">
-        <label for="student_name">Student name</label>
-        <input id="student_name" name="student_name" type="text" required>
+<div class="admin-container">
+    <section class="panel narrow">
+        <h1>Add New User</h1>
+        <form method="POST" class="form-grid">
+            <label for="student_name">Student Name</label>
+            <input id="student_name" name="student_name" type="text" placeholder="Full Name" required>
 
-        <label for="student_number">Student number</label>
-        <input id="student_number" name="student_number" type="text" inputmode="numeric" required>
+            <label for="student_number">Student Number</label>
+            <input id="student_number" name="student_number" type="text" inputmode="numeric" placeholder="ID Number" required>
 
-        <label for="role">Role</label>
-        <select id="role" name="role">
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
-        </select>
+            <label for="role">Role</label>
+            <select id="role" name="role">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+            </select>
 
-        <button type="submit">Create user</button>
-    </form>
-</section>
+            <button type="submit" class="btn-primary">Create User</button>
+        </form>
+    </section>
+
+    <hr class="separator">
+
+    <section class="panel wide">
+        <h2>Existing Users</h2>
+        <div class="table-responsive">
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Student ID</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.student_name }}</td>
+                        <td>{{ user.student_number }}</td>
+                        <td>
+                            <span class="badge {{ user.role }}">{{ user.role }}</span>
+                        </td>
+                        <td>
+                            <div class="actions">
+                                <form action="{{ url_for('auth.delete_user', user_id=user._id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this user?')">
+                                    <button type="submit" class="btn-delete" style="color: #e74c3c; cursor: pointer; background: none; border: none; font-weight: bold;">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
 {% endblock %}
+</body>
+</html>
