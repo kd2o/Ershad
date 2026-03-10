@@ -1,7 +1,8 @@
 import os
-
+from dotenv import load_dotenv
 from backend import create_app, db
 
+load_dotenv()
 
 def ensure_admin():
     admin_name = os.getenv("ADMIN_NAME", "Admin").strip()
@@ -11,8 +12,9 @@ def ensure_admin():
     app = create_app()
     with app.app_context():
         existing_user = db.db.users.find_one({"student_number": admin_student_number})
+        
         if existing_user:
-            print("Admin already exists.")
+            print(f"Admin '{admin_name}' already exists.")
             return
 
         db.db.users.insert_one(
@@ -23,8 +25,7 @@ def ensure_admin():
                 "role": "admin",
             }
         )
-        print("Admin user added successfully.")
-
+        print(f"Admin user '{admin_name}' added successfully.")
 
 if __name__ == "__main__":
     ensure_admin()
