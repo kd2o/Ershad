@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Add User | Ershad{% endblock %}
+
+{% block content %}
+<section class="panel narrow">
+    <h1>Add user</h1>
+    <form method="POST" class="form-grid">
+        <label for="student_name">Student name</label>
+        <input id="student_name" name="student_name" type="text" required>
+
+        <label for="student_number">Student number</label>
+        <input id="student_number" name="student_number" type="text" inputmode="numeric" required>
+
+        <label for="role">Role</label>
+        <select id="role" name="role">
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+        </select>
+
+        <button type="submit">Create user</button>
+    </form>
+</section>
+{% endblock %}

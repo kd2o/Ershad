@@ -1,0 +1,116 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(180deg, #f5f7fb 0%, #e8edf5 100%);
+    color: #1e293b;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.site-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    background: #0f172a;
+    color: #f8fafc;
+}
+
+.brand {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.site-nav {
+    display: flex;
+    gap: 1rem;
+}
+
+.site-nav a {
+    opacity: 0.9;
+}
+
+.page-shell {
+    width: min(960px, calc(100% - 2rem));
+    margin: 2rem auto;
+}
+
+.panel {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
+}
+
+.panel.narrow {
+    width: min(460px, 100%);
+    margin: 0 auto;
+}
+
+.muted {
+    color: #64748b;
+}
+
+.form-grid {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+input,
+select,
+button {
+    width: 100%;
+    padding: 0.8rem 0.9rem;
+    border-radius: 10px;
+    border: 1px solid #cbd5e1;
+    font: inherit;
+}
+
+button,
+.button-link {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    background: #0f172a;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    min-height: 44px;
+}
+
+.flash-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.flash-item {
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.flash-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.flash-danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.flash-warning {
+    background: #fef3c7;
+    color: #92400e;
+}

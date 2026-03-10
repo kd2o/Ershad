@@ -1,46 +1,99 @@
-# login / logout / register / forgot password / reset password 
-from flask import *
+from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required, login_user, logout_user
+
 from backend import db
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import login_user, logout_user, login_required, current_user
+from backend.models import User
 
 
-auth = Blueprint('auth', __name__)
+auth = Blueprint("auth", __name__)
 
-@auth.route('/login', methods=['GET', 'POST'])
+
+def _normalize_student_name(student_name):
+    return " ".join(student_name.strip().lower().split())
+
+
+def _normalize_student_number(student_number):
+    return student_number.strip()
+
+
+def _find_user(student_name, student_number):
+    return db.db.users.find_one(
+        {
+            "student_name_key": _normalize_student_name(student_name),
+            "student_number": _normalize_student_number(student_number),
+        }
+    )
+
+
+@auth.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        user = db.db.users.find_one({'email': email})
-        if user and check_password_hash(user['password'], password):
-            login_user(user)
-            return redirect(url_for('main.home'))
-        else :
-            flash('the password or the email is wrong')
-        return redirect(url_for('auth.login'))
-    
+    if current_user.is_authenticated:
+        return redirect(url_for("main.home"))
 
-@auth.route('/add_user', methods=['GET', 'POST'])
+    if request.method == "POST":
+        student_name = request.form.get("student_name", "")
+        student_number = request.form.get("student_number", "")
+
+        if not student_name or not student_number:
+            flash("Student name and student number are required.", "danger")
+            return redirect(url_for("auth.login"))
+
+        user_document = _find_user(student_name, student_number)
+        if user_document:
+            login_user(User.from_document(user_document))
+            flash("Signed in successfully.", "success")
+            return redirect(url_for("main.home"))
+
+        flash("The student name or student number is incorrect.", "danger")
+        return redirect(url_for("auth.login"))
+
+    return render_template("login.html")
+
+
+@auth.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    flash("Signed out successfully.", "success")
+    return redirect(url_for("auth.login"))
+
+
+@auth.route("/add_user", methods=["GET", "POST"])
 @login_required
 def add_user():
-    if current_user['role'] != 'admin':
-        flash('get out pls ur not admin')
-        return redirect(url_for('main.home'))
-    
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        role = request.form.get('role')
-        if db.db.users.find_one({'email': email}):
-            flash('this email is already used')
-            return redirect(url_for('add_user'))
-        
-        db.db.users.insert_one({
-            'email': email,
-            'password': generate_password_hash(password),
-            'role': role
-        })
-        flash('user added successfully')
-        return redirect(url_for('main.home'))
-    return render_template('add_user.html')
+    if not current_user.is_admin():
+        flash("Admin access is required.", "danger")
+        return redirect(url_for("main.home"))
+
+    if request.method == "POST":
+        student_name = request.form.get("student_name", "")
+        student_number = request.form.get("student_number", "")
+        role = request.form.get("role", "user").strip().lower()
+
+        if not student_name or not student_number:
+            flash("Student name and student number are required.", "danger")
+            return redirect(url_for("auth.add_user"))
+
+        if role not in {"admin", "user"}:
+            flash("Role must be either admin or user.", "danger")
+            return redirect(url_for("auth.add_user"))
+
+        normalized_student_name = _normalize_student_name(student_name)
+        normalized_student_number = _normalize_student_number(student_number)
+
+        if db.db.users.find_one({"student_number": normalized_student_number}):
+            flash("This student number is already in use.", "warning")
+            return redirect(url_for("auth.add_user"))
+
+        db.db.users.insert_one(
+            {
+                "student_name": student_name.strip(),
+                "student_name_key": normalized_student_name,
+                "student_number": normalized_student_number,
+                "role": role,
+            }
+        )
+        flash("User added successfully.", "success")
+        return redirect(url_for("main.home"))
+
+    return render_template("add_user.html")
