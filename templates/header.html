@@ -35,7 +35,6 @@ hamburger.onclick = function() {
     navMenu.classList.toggle("active");
 }
 
-// إغلاق القائمة عند الضغط في أي مكان خارجها
 window.onclick = function(event) {
     if (!hamburger.contains(event.target) && !navMenu.contains(event.target)) {
         hamburger.classList.remove("active");
