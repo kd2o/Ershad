@@ -4,25 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../static/css/add_user.css">
+    <link rel="stylesheet" href="../static/css/style.css">
     <title>Add User</title>
 </head>
 <body>
-    {% extends "base.html" %}
-
-{% block title %}Manage Users | Ershad{% endblock %}
+{% include 'header.html' %}
 
 {% block content %}
 <div class="admin-container">
     <section class="panel narrow">
-        <h1>Add New User</h1>
+        <h1>أضافة حساب </h1>
         <form method="POST" class="form-grid">
-            <label for="student_name">Student Name</label>
+            <label for="student_name">أسم الطالب</label>
             <input id="student_name" name="student_name" type="text" placeholder="Full Name" required>
 
-            <label for="student_number">Student Number</label>
+            <label for="student_number">رقم الطالب</label>
             <input id="student_number" name="student_number" type="text" inputmode="numeric" placeholder="ID Number" required>
 
-            <label for="role">Role</label>
+            <label for="role">الرتبة</label>
             <select id="role" name="role">
                 <option value="user">User</option>
                 <option value="admin">Admin</option>
