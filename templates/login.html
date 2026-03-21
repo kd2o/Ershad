@@ -1,31 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../static/css/style.css">
-    <title>login</title>
+    <link rel="stylesheet" href="../static/css/login.css">
+    <title>تسجيل الدخول</title>
 </head>
 <body>
 {% include 'header.html' %}
-{% block title %}Login | Ershad{% endblock %}
 
 {% block content %}
 <section class="panel narrow">
-    <h1>Sign in</h1>
-    <p class="muted">Use the student name and student number to access the dashboard.</p>
+    <h1>تسجيل الدخول</h1>
+    <p class="muted">استخدم اسم الطالب ورقم الطالب للدخول إلى لوحة التحكم.</p>
     <form method="POST" class="form-grid">
-        <label for="student_name">Student name</label>
+        <label for="student_name">اسم الطالب</label>
         <input id="student_name" name="student_name" type="text" autocomplete="name" required>
 
-        <label for="student_number">Student number</label>
+        <label for="student_number">رقم الطالب</label>
         <input id="student_number" name="student_number" type="text" inputmode="numeric" required>
 
-        <button type="submit">Login</button>
+        <button type="submit">دخول</button>
     </form>
 </section>
 {% endblock %}
 
-    
 </body>
 </html>

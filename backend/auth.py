@@ -53,7 +53,9 @@ def logout():
 
 @auth.route("/add_user", methods=["GET", "POST"])
 @login_required
+
 def add_user():
+    
     if getattr(current_user, 'role', None) != 'admin':
         flash("Access denied.", "danger")
         return redirect(url_for('main.home'))

@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Alexandria:wght@100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Tajawal:wght@200;300;400;500;700;800;900&display=swap');
+:root {
+    --primary-color: #2563eb;   
+    --primary-hover: #1d4ed8;
+    --bg-color: #f8fafc;       
+    --panel-bg: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.panel.narrow {
+    max-width: 400px;
+    margin: 80px auto; 
+    padding: 2rem;
+    background-color: var(--panel-bg);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+}
+
+h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+p.muted {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    line-height: 1.5;
+}
+
+.form-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: -0.75rem; 
+}
+
+input {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    font-size: 1rem;
+    transition: all 0.2s;
+    background-color: #fcfcfc;
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* تنسيق الزر */
+button {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+button:hover {
+    background-color: var(--primary-hover);
+}
+
+@media (max-width: 480px) {
+    .panel.narrow {
+        margin: 40px 20px;
+        padding: 1.5rem;
+    }
+}
