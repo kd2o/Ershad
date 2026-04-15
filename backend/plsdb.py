@@ -1,6 +1,14 @@
 from pymongo import MongoClient
 
-uri = "mongodb+srv://kd2oErshad:kdo3liloverayan@cluster0.vvolyr8.mongodb.net/guidance_app?retryWrites=true&w=majority"
-client = MongoClient(uri)
+import certifi
 
-print(client.list_database_names())
+from backend.config import Config
+
+
+def list_database_names():
+    client = MongoClient(Config.MONGO_URI, tlsCAFile=certifi.where())
+    return client.list_database_names()
+
+
+if __name__ == "__main__":
+    print(list_database_names())

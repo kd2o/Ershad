@@ -123,6 +123,16 @@ body {
     color: #166534;
 }
 
+.badge.mentor {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.badge.guidance_committee {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
 .badge.user {
     background: var(--primary-soft);
     color: var(--primary-dark);
@@ -136,4 +146,9 @@ body {
 
 .btn-delete:hover {
     background: #fee2e2;
+}
+
+.empty-table-cell {
+    text-align: center;
+    color: var(--text-muted);
 }

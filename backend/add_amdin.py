@@ -1,8 +1,17 @@
 import os
+import sys
+from pathlib import Path
+
 from dotenv import load_dotenv
+
+if __package__ in (None, ""):
+    project_root = Path(__file__).resolve().parents[1]
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
+
 from backend import create_app, db
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 def ensure_admin():
     admin_name = os.getenv("ADMIN_NAME", "Admin").strip()

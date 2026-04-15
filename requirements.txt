@@ -1,5 +1,8 @@
 Flask
 Flask-PyMongo
 Flask-Login
+Flask-SocketIO
 Flask-WTF
 Werkzeug
+certifi
+python-dotenv

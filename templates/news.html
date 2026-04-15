@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}الأخبار | Ershad{% endblock %}
+
+{% block content %}
+<style>
+    /* تحسين المظهر عند اختفاء صندوق النشر */
+    .news-layout.is-viewer-only {
+        grid-template-columns: 1fr; /* جعل الأخبار تأخذ العرض الكامل */
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .news-layout.is-viewer-only .news-sidebar {
+        display: none; /* إخفاء السايدبار بالكامل للمستخدم العادي */
+    }
+</style>
+
+<section class="news-layout {{ 'is-viewer-only' if not current_user.can_post_news() }}">
+    
+    {# قسم السايدبار والنشر: يظهر فقط للأدمن أو من يملك صلاحية #}
+    {% if current_user.can_post_news() %}
+    <aside class="panel news-sidebar">
+        <div class="news-header">
+            <h1>الأخبار</h1>
+            <p>لوحة أخبار حيّة لعرض الإعلانات والمستجدات على جميع المستخدمين.</p>
+            <div class="news-lock-note">لديك صلاحية نشر الأخبار بصفتك إداري.</div>
+        </div>
+
+        <section class="panel news-composer">
+            <div class="page-title">
+                <h2>نشر خبر جديد</h2>
+            </div>
+
+            <textarea
+                id="news-message-input"
+                class="chat-input"
+                placeholder="اكتب الخبر أو الإعلان هنا..."
+                maxlength="{{ max_news_message_length }}"
+            ></textarea>
+
+            <div class="news-composer__footer">
+                <span id="news-counter" class="news-counter">0 / {{ max_news_message_length }}</span>
+                <button id="news-send-button" class="btn-primary" type="button">نشر الخبر</button>
+            </div>
+            <div id="news-feedback" class="chat-feedback" hidden></div>
+        </section>
+    </aside>
+    {% endif %}
+
+    {# قسم عرض الأخبار الرئيسي: يظهر للجميع #}
+    <section class="panel news-main">
+        <div class="page-title">
+            <h2 class="news-main__title">آخر الأخبار</h2>
+            {% if not current_user.can_post_news() %}
+                <p>مرحباً بك في لوحة الأخبار، هنا تجد آخر المستجدات الرسمية.</p>
+            {% endif %}
+        </div>
+        <div id="news-stream" class="news-stream">
+            {# يتم التعبئة عبر JS #}
+        </div>
+    </section>
+</section>
+
+{# البيانات المخفية للـ JavaScript #}
+<div id="news-data"
+    data-user-id="{{ current_user.get_id() }}"
+    data-can-post="{{ 1 if current_user.can_post_news() else 0 }}"
+    data-max-length="{{ max_news_message_length }}"
+    data-messages='{{ news_messages | tojson | safe }}'
+></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+    const newsData = document.getElementById("news-data").dataset;
+    const socket = io();
+    const canPostNews = newsData.canPost === "1";
+    const newsMessages = JSON.parse(newsData.messages || "[]");
+
+    const elements = {
+        stream: document.getElementById("news-stream"),
+        input: document.getElementById("news-message-input"),
+        button: document.getElementById("news-send-button"),
+        counter: document.getElementById("news-counter"),
+        feedback: document.getElementById("news-feedback"),
+    };
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function buildNewsMarkup(msg) {
+        return `
+            <article class="news-message animate-in">
+                <div class="news-message__meta">
+                    <strong>${escapeHtml(msg.author_name)}</strong>
+                    <span class="news-role">${escapeHtml(msg.author_role_label)}</span>
+                    <time>${escapeHtml(msg.timestamp)}</time>
+                </div>
+                <p class="news-message__body">${escapeHtml(msg.message)}</p>
+            </article>
+        `;
+    }
+
+    function renderMessages() {
+        if (newsMessages.length === 0) {
+            elements.stream.innerHTML = '<div class="news-empty">لا توجد أخبار حالياً.</div>';
+            return;
+        }
+        elements.stream.innerHTML = newsMessages.map(buildNewsMarkup).join('');
+    }
+
+    // منطق السوكيت
+    socket.on("connect", () => socket.emit("join_news"));
+    
+    socket.on("news_history", (data) => {
+        newsMessages.splice(0, newsMessages.length, ...data.messages);
+        renderMessages();
+    });
+
+    socket.on("news_message", (msg) => {
+        newsMessages.push(msg);
+        elements.stream.insertAdjacentHTML('beforeend', buildNewsMarkup(msg));
+        elements.stream.scrollTop = elements.stream.scrollHeight;
+    });
+
+    // أحداث الأدمن فقط
+    if (canPostNews && elements.button) {
+        elements.button.onclick = () => {
+            const val = elements.input.value.trim();
+            if (val) {
+                socket.emit("send_news_message", { message: val });
+                elements.input.value = "";
+            }
+        };
+    }
+
+    renderMessages();
+</script>
+{% endblock %}

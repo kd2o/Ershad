@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+
+{% block title %}الرسائل | Ershad{% endblock %}
+
+{% block content %}
+<section class="chat-single-layout">
+    <section class="panel chat-status-panel">
+        <div class="chat-status-panel__header">
+            <div>
+                <h1>صندوق الرسائل</h1>
+                <p>اختر الجهة المناسبة لطلب المحادثة وسنفتح لك الدردشة فور قبول الطلب.</p>
+            </div>
+            <span id="status-badge" class="chat-status-badge badge-idle">غير مفعّل</span>
+        </div>
+
+        <div id="status-card" class="chat-status-card">
+            لم ترسل طلب محادثة بعد. اضغط على الزر بالأسفل لاختيار الجهة المناسبة وبدء التواصل.
+        </div>
+
+        <div id="student-feedback" class="chat-feedback" hidden></div>
+
+        <div class="chat-cta service-actions">
+            <button id="request-chat-btn" class="btn-primary" type="button">طلب محادثة</button>
+        </div>
+
+        <section id="service-picker" class="service-picker" hidden>
+            <h2 class="service-picker__title">اختر الجهة المطلوبة</h2>
+            <div class="service-options">
+                {% for option in service_options %}
+                <button
+                    type="button"
+                    class="service-card"
+                    data-service-type="{{ option.value }}"
+                >
+                    <strong>{{ option.label }}</strong>
+                    <span>{{ option.description }}</span>
+                </button>
+                {% endfor %}
+            </div>
+        </section>
+    </section>
+
+    <section class="panel chat-main">
+        <div class="chat-main__header">
+            <div>
+                <h2>المحادثة</h2>
+                <p id="student-chat-subtitle" class="chat-subtitle">ستظهر الرسائل هنا بعد قبول الطلب.</p>
+            </div>
+        </div>
+
+        <div id="student-chat-box" class="chat-box">
+            <div class="chat-empty-state">
+                <strong>بانتظار بدء المحادثة.</strong>
+                <p>بعد موافقة الجهة المختصة ستتمكن من إرسال الرسائل من هنا.</p>
+            </div>
+        </div>
+
+        <form id="student-chat-form" class="chat-composer">
+            <input
+                id="student-message-input"
+                class="chat-input"
+                type="text"
+                placeholder="بانتظار قبول الطلب"
+                autocomplete="off"
+                maxlength="{{ max_chat_message_length }}"
+                disabled
+            >
+            <button id="student-send-button" class="btn-primary" type="submit" disabled>إرسال</button>
+        </form>
+    </section>
+</section>
+
+<div
+    id="chat-metadata"
+    data-user-id='{{ current_user.get_id() | tojson | safe }}'
+    data-request='{{ chat_request | tojson | safe }}'
+    data-messages='{{ initial_messages | tojson | safe }}'
+    data-max-message-length="{{ max_chat_message_length }}"
+></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+<script>
+const metadata = document.getElementById("chat-metadata").dataset;
+
+const currentUserId = JSON.parse(metadata.userId);
+const initialRequest = JSON.parse(metadata.request);
+const initialMessages = JSON.parse(metadata.messages);
+const maxChatMessageLength = Number(metadata.maxMessageLength || "1200");
+const socket = io();
+
+let currentRequest = initialRequest;
+let currentRoomId = currentRequest ? currentRequest.room_id : "";
+let hasJoinedRoom = false;
+let conversationMessages = Array.isArray(initialMessages) ? initialMessages.slice() : [];
+let pickerVisible = false;
+
+const elements = {
+    statusBadge: document.getElementById("status-badge"),
+    statusCard: document.getElementById("status-card"),
+    subtitle: document.getElementById("student-chat-subtitle"),
+    feedback: document.getElementById("student-feedback"),
+    requestButton: document.getElementById("request-chat-btn"),
+    servicePicker: document.getElementById("service-picker"),
+    serviceCards: Array.from(document.querySelectorAll("[data-service-type]")),
+    chatBox: document.getElementById("student-chat-box"),
+    form: document.getElementById("student-chat-form"),
+    input: document.getElementById("student-message-input"),
+    sendButton: document.getElementById("student-send-button"),
+};
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+}
+
+function showFeedback(message, tone = "info") {
+    if (!message) {
+        elements.feedback.hidden = true;
+        elements.feedback.textContent = "";
+        elements.feedback.className = "chat-feedback";
+        return;
+    }
+
+    elements.feedback.hidden = false;
+    elements.feedback.textContent = message;
+    elements.feedback.className = `chat-feedback is-${tone}`;
+}
+
+function setBadge(label, className) {
+    elements.statusBadge.textContent = label;
+    elements.statusBadge.className = `chat-status-badge ${className}`;
+}
+
+function setComposerEnabled(enabled, placeholder) {
+    elements.input.disabled = !enabled;
+    elements.sendButton.disabled = !enabled;
+    elements.input.placeholder = placeholder;
+}
+
+function renderEmptyState(title, body) {
+    elements.chatBox.innerHTML = `
+        <div class="chat-empty-state">
+            <strong>${escapeHtml(title)}</strong>
+            <p>${escapeHtml(body)}</p>
+        </div>
+    `;
+}
+
+function buildMessageMarkup(message) {
+    const isMe = message.sender_id === currentUserId;
+    return `
+        <div class="message-row ${isMe ? "is-me" : "is-other"}">
+            <article class="message-bubble">
+                <div class="message-meta">
+                    <span>${escapeHtml(isMe ? "أنت" : message.sender_name)}</span>
+                    <time>${escapeHtml(message.timestamp || "")}</time>
+                </div>
+                <p class="message-text">${escapeHtml(message.message)}</p>
+            </article>
+        </div>
+    `;
+}
+
+function renderMessages(messages) {
+    conversationMessages = Array.isArray(messages) ? messages.slice() : [];
+
+    if (!conversationMessages.length) {
+        renderEmptyState("لا توجد رسائل بعد.", "بمجرد إرسال أول رسالة ستظهر هنا.");
+        return;
+    }
+
+    elements.chatBox.innerHTML = conversationMessages.map(buildMessageMarkup).join("");
+    elements.chatBox.scrollTop = elements.chatBox.scrollHeight;
+}
+
+function appendMessage(message) {
+    conversationMessages.push(message);
+
+    if (elements.chatBox.querySelector(".chat-empty-state")) {
+        elements.chatBox.innerHTML = "";
+    }
+
+    elements.chatBox.insertAdjacentHTML("beforeend", buildMessageMarkup(message));
+    elements.chatBox.scrollTop = elements.chatBox.scrollHeight;
+}
+
+function setServiceCardsDisabled(disabled) {
+    for (const card of elements.serviceCards) {
+        card.disabled = disabled;
+    }
+}
+
+function togglePicker(visible) {
+    pickerVisible = Boolean(visible);
+    elements.servicePicker.hidden = !pickerVisible;
+}
+
+function joinConversation() {
+    if (!currentRequest || currentRequest.status !== "active" || !currentRequest.staff_id) {
+        return;
+    }
+
+    if (hasJoinedRoom && currentRoomId === currentRequest.room_id) {
+        return;
+    }
+
+    currentRoomId = currentRequest.room_id;
+    socket.emit("join_chat", { recipient_id: currentRequest.staff_id });
+}
+
+function renderState() {
+    if (!currentRequest) {
+        setBadge("غير مفعّل", "badge-idle");
+        elements.statusCard.textContent = "لم ترسل طلب محادثة بعد. اضغط على الزر بالأسفل لاختيار الجهة المناسبة وبدء التواصل.";
+        elements.subtitle.textContent = "ستظهر الرسائل هنا بعد قبول الطلب.";
+        elements.requestButton.hidden = false;
+        elements.requestButton.disabled = false;
+        elements.requestButton.textContent = pickerVisible ? "إخفاء الخيارات" : "طلب محادثة";
+        togglePicker(pickerVisible);
+        setServiceCardsDisabled(false);
+        setComposerEnabled(false, "بانتظار قبول الطلب");
+        renderEmptyState("بانتظار بدء المحادثة.", "بعد موافقة الجهة المختصة ستتمكن من إرسال الرسائل من هنا.");
+        return;
+    }
+
+    togglePicker(false);
+
+    if (currentRequest.status === "pending") {
+        setBadge("بانتظار الموافقة", "badge-pending");
+        elements.statusCard.textContent = `تم إرسال الطلب إلى ${currentRequest.service_label}. سيتم إشعارك فور قبول المحادثة.`;
+        elements.subtitle.textContent = `${currentRequest.service_label} • الطلب قيد الانتظار الآن.`;
+        elements.requestButton.hidden = false;
+        elements.requestButton.disabled = true;
+        elements.requestButton.textContent = `تم إرسال الطلب إلى ${currentRequest.service_label}`;
+        setComposerEnabled(false, "بانتظار قبول الطلب");
+        renderEmptyState("طلبك قيد الانتظار.", "ستفتح نافذة المحادثة هنا تلقائيا بعد قبول الطلب.");
+        return;
+    }
+
+    setBadge("محادثة نشطة", "badge-active");
+    elements.statusCard.textContent = currentRequest.staff_name
+        ? `تم تفعيل المحادثة مع ${currentRequest.staff_name} (${currentRequest.service_label}).`
+        : `تم تفعيل المحادثة مع ${currentRequest.service_label}.`;
+    elements.subtitle.textContent = "المحادثة مفعلة ويمكنك إرسال الرسائل الآن.";
+    elements.requestButton.hidden = true;
+    setComposerEnabled(true, "اكتب رسالتك هنا");
+    renderMessages(conversationMessages);
+
+    if (socket.connected) {
+        joinConversation();
+    }
+}
+
+elements.requestButton.addEventListener("click", () => {
+    if (currentRequest) {
+        return;
+    }
+
+    togglePicker(!pickerVisible);
+    renderState();
+});
+
+for (const card of elements.serviceCards) {
+    card.addEventListener("click", () => {
+        const serviceType = card.dataset.serviceType;
+        setServiceCardsDisabled(true);
+        elements.requestButton.disabled = true;
+        socket.emit("request_staff_chat", { service_type: serviceType });
+    });
+}
+
+elements.form.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const message = elements.input.value.trim();
+    if (!currentRequest || currentRequest.status !== "active" || !currentRequest.staff_id || !message) {
+        return;
+    }
+
+    if (message.length > maxChatMessageLength) {
+        showFeedback("الرسالة أطول من الحد المسموح.", "error");
+        return;
+    }
+
+    socket.emit("private_message", {
+        recipient_id: currentRequest.staff_id,
+        message,
+    });
+
+    elements.input.value = "";
+    elements.input.focus();
+});
+
+socket.on("connect", () => {
+    if (currentRequest && currentRequest.status === "active") {
+        hasJoinedRoom = false;
+        joinConversation();
+    }
+});
+
+socket.on("chat_request_status", (data) => {
+    currentRequest = data.request;
+    currentRoomId = currentRequest ? currentRequest.room_id : "";
+    hasJoinedRoom = false;
+
+    if (!currentRequest || currentRequest.status !== "active") {
+        conversationMessages = [];
+    }
+
+    renderState();
+    showFeedback(`تم إرسال الطلب إلى ${currentRequest.service_label} بنجاح.`, "success");
+});
+
+socket.on("chat_request_accepted", (data) => {
+    currentRequest = data.request;
+    currentRoomId = data.room_id || (currentRequest ? currentRequest.room_id : "");
+    hasJoinedRoom = false;
+    conversationMessages = [];
+    renderState();
+    joinConversation();
+    showFeedback(`تم قبول الطلب من ${currentRequest.service_label}.`, "success");
+});
+
+socket.on("conversation_history", (data) => {
+    if (!currentRequest || data.room_id !== currentRequest.room_id) {
+        return;
+    }
+
+    hasJoinedRoom = true;
+    currentRoomId = data.room_id;
+
+    if (data.request) {
+        currentRequest = data.request;
+    }
+
+    renderMessages(data.messages || []);
+    renderState();
+});
+
+socket.on("new_message", (message) => {
+    if (!currentRequest || message.room_id !== currentRequest.room_id) {
+        return;
+    }
+
+    appendMessage(message);
+});
+
+socket.on("chat_closed", (data) => {
+    currentRequest = null;
+    currentRoomId = "";
+    hasJoinedRoom = false;
+    conversationMessages = [];
+    pickerVisible = false;
+    renderState();
+    showFeedback(data.message || "تم إنهاء المحادثة من قبل طاقم الإرشاد.", "info");
+});
+
+socket.on("chat_error", (data) => {
+    showFeedback(data.message || "حدث خطأ غير متوقع في نظام الرسائل.", "error");
+    elements.requestButton.disabled = false;
+    setServiceCardsDisabled(false);
+});
+
+renderState();
+</script>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}الجدول الدراسي | Ershad{% endblock %}
+
+{% block content %}
+<div class="split-layout">
+    <section class="panel section-stack">
+        <div class="page-title">
+            <h1>الجدول الدراسي</h1>
+            <p class="muted">
+                {% if current_user.can_manage_schedule() %}
+                أضف المواد والمواعيد الدراسية ليتمكن الجميع من مراجعتها بسهولة.
+                {% else %}
+                استعرض جميع المواعيد الدراسية المضافة من طاقم الإرشاد.
+                {% endif %}
+            </p>
+        </div>
+
+        {% if current_user.can_manage_schedule() %}
+        <form method="POST" class="form-grid">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label for="title">اسم المادة أو الحصة</label>
+            <input id="title" name="title" type="text" maxlength="120" required>
+
+            <label for="day">اليوم</label>
+            <select id="day" name="day" required>
+                <option value="">اختر اليوم</option>
+                {% for option in day_options %}
+                <option value="{{ option.value }}">{{ option.label }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="start_time">وقت البداية</label>
+            <input id="start_time" name="start_time" type="time" required>
+
+            <label for="end_time">وقت النهاية</label>
+            <input id="end_time" name="end_time" type="time" required>
+
+            <label for="location">المكان</label>
+            <input id="location" name="location" type="text" maxlength="120" placeholder="اختياري">
+
+            <label for="notes">ملاحظات</label>
+            <textarea id="notes" name="notes" rows="4" maxlength="400" placeholder="اختياري"></textarea>
+
+            <button type="submit" class="btn-primary">إضافة إلى الجدول</button>
+        </form>
+        {% endif %}
+    </section>
+
+    <section class="section-stack">
+        {% if schedule_entries %}
+            <div class="schedule-grid">
+                {% for entry in schedule_entries %}
+                <article class="panel schedule-card">
+                    <div class="schedule-card__header">
+                        <h2>{{ entry.title }}</h2>
+                        <span class="chat-status-badge badge-idle">{{ entry.day_label }}</span>
+                    </div>
+                    <p class="schedule-card__meta">{{ entry.start_time }} - {{ entry.end_time }}</p>
+                    {% if entry.location %}
+                    <p class="schedule-card__detail"><strong>المكان:</strong> {{ entry.location }}</p>
+                    {% endif %}
+                    {% if entry.notes %}
+                    <p class="schedule-card__detail"><strong>ملاحظات:</strong> {{ entry.notes }}</p>
+                    {% endif %}
+                    <p class="schedule-card__detail muted">أضيف بواسطة {{ entry.created_by_name or 'طاقم الإرشاد' }}</p>
+
+                    {% if current_user.can_manage_schedule() %}
+                    <form
+                        action="{{ url_for('schedule.delete_entry', entry_id=entry._id) }}"
+                        method="POST"
+                        class="inline-form"
+                        onsubmit="return confirm('هل تريد حذف هذا الموعد من الجدول؟')"
+                    >
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn-delete">حذف الموعد</button>
+                    </form>
+                    {% endif %}
+                </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <section class="panel empty-state">
+                <strong>لا توجد عناصر في الجدول الدراسي بعد.</strong>
+                <p>أضف أول موعد دراسي ليظهر هنا للجميع.</p>
+            </section>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

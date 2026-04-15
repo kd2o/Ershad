@@ -1,0 +1,527 @@
+{% extends "base.html" %}
+
+{% block title %}صندوق الرسائل | Ershad{% endblock %}
+
+{% block content %}
+<section class="chat-layout">
+    <aside class="panel chat-sidebar">
+        <div class="chat-sidebar__header">
+            <h1>طلبات المحادثة</h1>
+            <p>تظهر هنا الطلبات الجديدة الخاصة بصلاحياتك ويمكنك قبولها وبدء الرد مباشرة.</p>
+        </div>
+        <div id="chat-feedback" class="chat-feedback" hidden></div>
+        <div id="requests-list" class="chat-request-list"></div>
+    </aside>
+
+    <section class="panel chat-main">
+        <div class="chat-main__header">
+            <div>
+                <h2 id="chat-title">اختر طلبا من القائمة</h2>
+                <p id="chat-subtitle" class="chat-subtitle">يمكنك قبول الطلب ثم بدء المحادثة مباشرة.</p>
+            </div>
+            <div class="chat-main__actions">
+                <button id="end-chat-btn" class="btn-danger" type="button" hidden>إنهاء المحادثة</button>
+                <button id="accept-request-btn" class="btn-primary" type="button" hidden>قبول الطلب</button>
+            </div>
+        </div>
+
+        <div id="chat-box" class="chat-box">
+            <div class="chat-empty-state">
+                <strong>لا توجد محادثة محددة الآن.</strong>
+                <p>اختر طالبا من القائمة لعرض تفاصيل الطلب أو لبدء المحادثة معه.</p>
+            </div>
+        </div>
+
+        <form id="chat-form" class="chat-composer">
+            <input
+                id="message-input"
+                class="chat-input"
+                type="text"
+                placeholder="اختر طلبا أولا"
+                autocomplete="off"
+                maxlength="{{ max_chat_message_length }}"
+                disabled
+            >
+            <button id="send-button" class="btn-primary" type="submit" disabled>إرسال</button>
+        </form>
+    </section>
+</section>
+
+<div
+    id="chat-data"
+    data-user-id="{{ current_user.get_id() }}"
+    data-user-role="{{ current_user.role }}"
+    data-requests='{{ chat_requests | tojson | safe }}'
+    data-selected-id="{{ selected_student_id }}"
+    data-max-message-length="{{ max_chat_message_length }}"
+></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+<script>
+const chatData = document.getElementById("chat-data").dataset;
+
+const currentUserId = chatData.userId;
+const currentUserRole = chatData.userRole;
+const selectedStudentIdFromServer = chatData.selectedId;
+const maxChatMessageLength = Number(chatData.maxMessageLength || "1200");
+const socket = io();
+
+const requestsMap = new Map();
+let activeStudentId = "";
+let activeRoomId = "";
+let hasJoinedActiveRoom = false;
+let activeMessages = [];
+
+const initialRequests = JSON.parse(chatData.requests || "[]");
+
+const elements = {
+    requestsList: document.getElementById("requests-list"),
+    feedback: document.getElementById("chat-feedback"),
+    title: document.getElementById("chat-title"),
+    subtitle: document.getElementById("chat-subtitle"),
+    endButton: document.getElementById("end-chat-btn"),
+    acceptButton: document.getElementById("accept-request-btn"),
+    chatBox: document.getElementById("chat-box"),
+    form: document.getElementById("chat-form"),
+    input: document.getElementById("message-input"),
+    sendButton: document.getElementById("send-button"),
+};
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+}
+
+function showFeedback(message, tone = "info") {
+    if (!message) {
+        elements.feedback.hidden = true;
+        elements.feedback.textContent = "";
+        elements.feedback.className = "chat-feedback";
+        return;
+    }
+
+    elements.feedback.hidden = false;
+    elements.feedback.textContent = message;
+    elements.feedback.className = `chat-feedback is-${tone}`;
+}
+
+function isVisibleRequest(request) {
+    if (!request) {
+        return false;
+    }
+
+    if (request.status === "active") {
+        return request.staff_id === currentUserId;
+    }
+
+    if (request.status !== "pending") {
+        return false;
+    }
+
+    if (currentUserRole === "admin") {
+        return true;
+    }
+
+    return request.service_type === currentUserRole;
+}
+
+function sortRequests() {
+    return Array.from(requestsMap.values()).sort((left, right) => {
+        const leftPriority = left.status === "pending" ? 0 : 1;
+        const rightPriority = right.status === "pending" ? 0 : 1;
+
+        if (leftPriority !== rightPriority) {
+            return leftPriority - rightPriority;
+        }
+
+        return (right.updated_at_iso || "").localeCompare(left.updated_at_iso || "");
+    });
+}
+
+function renderRequestList() {
+    const sortedRequests = sortRequests();
+
+    if (!sortedRequests.length) {
+        elements.requestsList.innerHTML = `
+            <div class="chat-empty-state compact">
+                <strong>لا توجد طلبات حاليا.</strong>
+                <p>عند وصول طلب جديد ضمن صلاحياتك سيظهر هنا مباشرة.</p>
+            </div>
+        `;
+        return;
+    }
+
+    elements.requestsList.innerHTML = sortedRequests.map((request) => {
+        const isActive = request.student_id === activeStudentId;
+        const statusClass = request.status === "pending" ? "badge-pending" : "badge-active";
+
+        return `
+            <button
+                type="button"
+                class="chat-request-item${isActive ? " is-active" : ""}"
+                data-student-id="${escapeHtml(request.student_id)}"
+            >
+                <div class="chat-request-item__top">
+                    <strong>${escapeHtml(request.student_name)}</strong>
+                    <span class="chat-status-badge ${statusClass}">${escapeHtml(request.status_label)}</span>
+                </div>
+                <span class="chat-request-item__meta">
+                    ${escapeHtml(request.service_label)}${request.updated_at ? ` • آخر تحديث: ${escapeHtml(request.updated_at)}` : ""}
+                </span>
+            </button>
+        `;
+    }).join("");
+}
+
+function getActiveRequest() {
+    return activeStudentId ? (requestsMap.get(activeStudentId) || null) : null;
+}
+
+function setComposerEnabled(enabled, placeholder) {
+    elements.input.disabled = !enabled;
+    elements.sendButton.disabled = !enabled;
+    elements.input.placeholder = placeholder;
+}
+
+function renderEmptyState(title, body) {
+    elements.chatBox.innerHTML = `
+        <div class="chat-empty-state">
+            <strong>${escapeHtml(title)}</strong>
+            <p>${escapeHtml(body)}</p>
+        </div>
+    `;
+}
+
+function buildMessageMarkup(message) {
+    const isMe = message.sender_id === currentUserId;
+    return `
+        <div class="message-row ${isMe ? "is-me" : "is-other"}">
+            <article class="message-bubble">
+                <div class="message-meta">
+                    <span>${escapeHtml(isMe ? "أنت" : message.sender_name)}</span>
+                    <time>${escapeHtml(message.timestamp || "")}</time>
+                </div>
+                <p class="message-text">${escapeHtml(message.message)}</p>
+            </article>
+        </div>
+    `;
+}
+
+function renderMessages(messages) {
+    activeMessages = Array.isArray(messages) ? messages.slice() : [];
+
+    if (!activeMessages.length) {
+        renderEmptyState("لا توجد رسائل بعد.", "يمكنك إرسال أول رسالة من هنا وستظهر في نافذة المحادثة.");
+        return;
+    }
+
+    elements.chatBox.innerHTML = activeMessages.map(buildMessageMarkup).join("");
+    elements.chatBox.scrollTop = elements.chatBox.scrollHeight;
+}
+
+function appendMessage(message) {
+    activeMessages.push(message);
+
+    if (elements.chatBox.querySelector(".chat-empty-state")) {
+        elements.chatBox.innerHTML = "";
+    }
+
+    elements.chatBox.insertAdjacentHTML("beforeend", buildMessageMarkup(message));
+    elements.chatBox.scrollTop = elements.chatBox.scrollHeight;
+}
+
+function joinActiveConversation() {
+    const activeRequest = getActiveRequest();
+    if (!activeRequest || activeRequest.status !== "active" || !activeRequest.room_id) {
+        return;
+    }
+
+    if (hasJoinedActiveRoom && activeRoomId === activeRequest.room_id) {
+        return;
+    }
+
+    activeRoomId = activeRequest.room_id;
+    socket.emit("join_chat", { recipient_id: activeRequest.student_id });
+}
+
+function refreshActivePanel() {
+    const activeRequest = getActiveRequest();
+
+    if (!activeRequest) {
+        elements.endButton.hidden = true;
+        elements.acceptButton.hidden = true;
+        elements.title.textContent = "اختر طلبا من القائمة";
+        elements.subtitle.textContent = "يمكنك قبول الطلب ثم بدء المحادثة مباشرة.";
+        setComposerEnabled(false, "اختر طلبا أولا");
+        renderEmptyState("لا توجد محادثة محددة الآن.", "اختر طالبا من القائمة لعرض تفاصيل الطلب أو لبدء المحادثة معه.");
+        return;
+    }
+
+    elements.title.textContent = activeRequest.student_name;
+    elements.subtitle.textContent = `${activeRequest.service_label} • ${activeRequest.status_label}`;
+
+    if (activeRequest.status === "pending") {
+        elements.endButton.hidden = true;
+        elements.acceptButton.hidden = false;
+        elements.acceptButton.disabled = false;
+        setComposerEnabled(false, "اقبل الطلب أولا لبدء المحادثة");
+        renderEmptyState(
+            "الطلب بانتظار موافقتك.",
+            `${activeRequest.service_description} اضغط على زر قبول الطلب لفتح نافذة المحادثة مع الطالب.`
+        );
+        return;
+    }
+
+    elements.endButton.hidden = false;
+    elements.endButton.disabled = false;
+    elements.acceptButton.hidden = true;
+    setComposerEnabled(true, `اكتب ردك إلى ${activeRequest.student_name}`);
+
+    if (activeMessages.length) {
+        renderMessages(activeMessages);
+    } else {
+        renderEmptyState("جار تحميل الرسائل...", "سيتم عرض سجل المحادثة خلال لحظات.");
+    }
+
+    if (socket.connected) {
+        joinActiveConversation();
+    }
+}
+
+function removeRequest(studentId) {
+    if (!studentId) {
+        return;
+    }
+
+    const wasActive = activeStudentId === studentId;
+    requestsMap.delete(studentId);
+
+    if (!wasActive) {
+        renderRequestList();
+        return;
+    }
+
+    activeStudentId = "";
+    activeRoomId = "";
+    hasJoinedActiveRoom = false;
+    activeMessages = [];
+
+    renderRequestList();
+
+    const remainingRequests = sortRequests();
+    if (remainingRequests.length) {
+        setActiveStudent(remainingRequests[0].student_id);
+        return;
+    }
+
+    refreshActivePanel();
+}
+
+function upsertRequest(requestData) {
+    if (!requestData) {
+        return;
+    }
+
+    if (!isVisibleRequest(requestData)) {
+        removeRequest(requestData.student_id);
+        return;
+    }
+
+    requestsMap.set(requestData.student_id, requestData);
+    renderRequestList();
+
+    if (!activeStudentId) {
+        return;
+    }
+
+    if (activeStudentId === requestData.student_id) {
+        refreshActivePanel();
+    }
+}
+
+function setActiveStudent(studentId, options = {}) {
+    activeStudentId = studentId || "";
+    activeRoomId = "";
+    hasJoinedActiveRoom = false;
+    activeMessages = [];
+
+    renderRequestList();
+    refreshActivePanel();
+
+    if (options.autoAccept) {
+        const activeRequest = getActiveRequest();
+        if (activeRequest && activeRequest.status === "pending") {
+            acceptActiveRequest();
+        }
+    }
+}
+
+function acceptActiveRequest() {
+    const activeRequest = getActiveRequest();
+    if (!activeRequest) {
+        return;
+    }
+
+    elements.acceptButton.disabled = true;
+    socket.emit("accept_chat_request", { student_id: activeRequest.student_id });
+}
+
+function closeActiveChat() {
+    const activeRequest = getActiveRequest();
+    if (!activeRequest || activeRequest.status !== "active") {
+        return;
+    }
+
+    const confirmed = window.confirm("هل أنت متأكد من إنهاء المحادثة؟ سيتم حذف جميع رسائلها من قاعدة البيانات.");
+    if (!confirmed) {
+        return;
+    }
+
+    elements.endButton.disabled = true;
+    socket.emit("close_chat", { student_id: activeRequest.student_id });
+}
+
+elements.requestsList.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-student-id]");
+    if (!button) {
+        return;
+    }
+
+    setActiveStudent(button.dataset.studentId);
+});
+
+elements.acceptButton.addEventListener("click", acceptActiveRequest);
+elements.endButton.addEventListener("click", closeActiveChat);
+
+elements.form.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const activeRequest = getActiveRequest();
+    const message = elements.input.value.trim();
+
+    if (!activeRequest || !message) {
+        return;
+    }
+
+    if (message.length > maxChatMessageLength) {
+        showFeedback("الرسالة أطول من الحد المسموح.", "error");
+        return;
+    }
+
+    socket.emit("private_message", {
+        recipient_id: activeRequest.student_id,
+        message,
+    });
+
+    elements.input.value = "";
+    elements.input.focus();
+});
+
+socket.on("connect", () => {
+    if (activeStudentId) {
+        hasJoinedActiveRoom = false;
+        refreshActivePanel();
+    }
+});
+
+socket.on("notify_admin", (data) => {
+    if (!data.request) {
+        return;
+    }
+
+    upsertRequest(data.request);
+    if (isVisibleRequest(data.request)) {
+        showFeedback(`طلب جديد من ${data.request.student_name}`, "success");
+    }
+
+    if (!activeStudentId && isVisibleRequest(data.request)) {
+        setActiveStudent(data.request.student_id);
+    }
+});
+
+socket.on("request_updated", (data) => {
+    if (!data.request) {
+        return;
+    }
+
+    upsertRequest(data.request);
+});
+
+socket.on("request_deleted", (data) => {
+    if (!data.student_id) {
+        return;
+    }
+
+    removeRequest(data.student_id);
+});
+
+socket.on("chat_ready", (data) => {
+    if (!data.request) {
+        return;
+    }
+
+    showFeedback(`تم فتح المحادثة مع ${data.request.student_name}`, "success");
+    upsertRequest(data.request);
+    setActiveStudent(data.request.student_id);
+});
+
+socket.on("conversation_history", (data) => {
+    const activeRequest = getActiveRequest();
+    if (!activeRequest || data.room_id !== activeRequest.room_id) {
+        return;
+    }
+
+    hasJoinedActiveRoom = true;
+    activeRoomId = data.room_id;
+
+    if (data.request) {
+        upsertRequest(data.request);
+    }
+
+    renderMessages(data.messages || []);
+});
+
+socket.on("new_message", (message) => {
+    const activeRequest = getActiveRequest();
+    if (!activeRequest || message.room_id !== activeRequest.room_id) {
+        return;
+    }
+
+    appendMessage(message);
+});
+
+socket.on("chat_closed", (data) => {
+    showFeedback(data.message || "تم إنهاء المحادثة.", "info");
+    removeRequest(data.student_id);
+    elements.endButton.disabled = false;
+});
+
+socket.on("chat_error", (data) => {
+    showFeedback(data.message || "حدث خطأ غير متوقع في نظام الرسائل.", "error");
+    elements.acceptButton.disabled = false;
+    elements.endButton.disabled = false;
+});
+
+for (const requestItem of initialRequests) {
+    if (isVisibleRequest(requestItem)) {
+        requestsMap.set(requestItem.student_id, requestItem);
+    }
+}
+
+renderRequestList();
+
+if (selectedStudentIdFromServer && requestsMap.has(selectedStudentIdFromServer)) {
+    setActiveStudent(selectedStudentIdFromServer, { autoAccept: true });
+} else if (requestsMap.size) {
+    setActiveStudent(sortRequests()[0].student_id);
+} else {
+    refreshActivePanel();
+}
+</script>
+{% endblock %}

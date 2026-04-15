@@ -11,7 +11,7 @@
                 {% if current_user.role == 'admin' %}
                     <li><a href="{{ url_for('auth.add_user') }}" class="nav-link admin-link">إدارة الطلاب</a></li>
                 {% endif %}
-                <li><a href="#" class="nav-link">صندوق الرسائل</a></li>
+                <li><a href="{{ url_for('messages.index') }}" class="nav-link">صندوق الرسائل</a></li>
                 <li><a href="{{ url_for('auth.logout') }}" class="btn-logout">خروج</a></li>
             {% else %}
                 <li><a href="{{ url_for('auth.login') }}" class="btn-login">دخول</a></li>

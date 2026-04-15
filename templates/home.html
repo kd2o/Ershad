@@ -1,88 +1,83 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../static/css/style.css">
-    <title>ershad</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-    <nav class="glass-nav">
-    <div class="nav-container">
-        <div class="logo">
-            <i class="fas fa-seedling"></i>
-            <span>إرشاد</span>
-        </div>
-
-        <ul class="nav-menu">
-            <li><a href="{{ url_for('main.home') }}" class="nav-link active">الرئيسية</a></li>
-            
-            {% if current_user.is_authenticated %}
-                {% if current_user.role == 'admin' %}
-                    <li><a href="{{ url_for('auth.add_user') }}" class="nav-link admin-link">إدارة الطلاب</a></li>
-                {% endif %}
-                <li><a href="#" class="nav-link">صندوق الرسائل</a></li>
-                <li><a href="#" class="nav-link">ملفي الشخصي</a></li>
-                <li><a href="{{ url_for('auth.logout') }}" class="btn-logout">تسجيل الخروج</a></li>
-            {% else %}
-                <li><a href="{{ url_for('auth.login') }}" class="btn-login">دخول</a></li>
-            {% endif %}
-        </ul>
-
-        <div class="hamburger">
-            <span class="bar"></span>
-            <span class="bar"></span>
-            <span class="bar"></span>
-        </div>
-    </div>
-</nav>
-
+{% block title %}الرئيسية | Ershad{% endblock %}
 
 {% block content %}
 <div class="home-container">
-    <header class="hero-section">
+    <section class="hero-section">
         <div class="hero-content">
-            <h1>أهلاً بك يا <span>{{ current_user.student_name }}</span> في منصة إرشاد</h1>
-            <p>مرشدك الإلكتروني معك دائماً لتوجيهك نحو النجاح الأكاديمي والنفسي.</p>
+            <h1>أهلا بك يا <span>{{ current_user.student_name }}</span> في منصة إرشاد</h1>
+            <p>
+                {% if current_user.is_staff() %}
+                لديك الآن صلاحيات متابعة الطلبات والرسائل والأخبار والجدول الدراسي بحسب دورك داخل المنصة.
+                {% else %}
+                استعرض الأخبار والجدول الدراسي، واختر الجهة المناسبة عند طلب محادثة مع طاقم الإرشاد.
+                {% endif %}
+            </p>
         </div>
         <div class="hero-icon">
             <i class="fas fa-user-graduate"></i>
         </div>
-    </header>
+    </section>
 
-    <div class="features-grid">
-        <div class="feature-card">
+    <section class="features-grid">
+        <article class="feature-card">
             <div class="card-icon"><i class="fas fa-calendar-alt"></i></div>
-            <h3>جدولي الدراسي</h3>
-            <p>تابع مواعيد دروسك واختباراتك القادمة بكل سهولة.</p>
-            <a href="#" class="card-link">عرض الجدول</a>
-        </div>
+            <h3>الجدول الدراسي</h3>
+            <p>
+                {% if current_user.can_manage_schedule() %}
+                أضف المواد الدراسية ونظم المواعيد ثم راجعها من مكان واحد.
+                {% else %}
+                استعرض الحصص والمواعيد الدراسية المضافة لك بسهولة.
+                {% endif %}
+            </p>
+            <a href="{{ url_for('schedule.index') }}" class="card-link">عرض الجدول</a>
+        </article>
 
-        <div class="feature-card highlight">
+        <article class="feature-card highlight">
             <div class="card-icon"><i class="fas fa-comments"></i></div>
-            <h3>استشر مرشدك</h3>
-            <p>هل تواجه مشكلة؟ أرسل رسالة خاصة للمرشد الأكاديمي الآن.</p>
-            <a href="#" class="card-link">بدء محادثة</a>
-        </div>
+            <h3>صندوق الرسائل</h3>
+            <p>
+                {% if current_user.is_staff() %}
+                استقبل الطلبات المناسبة لدورك وابدأ الرد على الطلاب مباشرة.
+                {% else %}
+                اطلب محادثة مع المرشد التربوي أو اللجنة الإرشادية حسب حاجتك.
+                {% endif %}
+            </p>
+            <a href="{{ url_for('messages.index') }}" class="card-link">
+                {% if current_user.is_staff() %}فتح الصندوق{% else %}بدء محادثة{% endif %}
+            </a>
+        </article>
 
-        <div class="feature-card">
-            <div class="card-icon"><i class="fas fa-lightbulb"></i></div>
-            <h3>نصائح وتوجيهات</h3>
-            <p>مجموعة من المقالات والنصائح لتطوير مهاراتك في الدراسة.</p>
-            <a href="#" class="card-link">اقرأ المزيد</a>
-        </div>
+        <article class="feature-card">
+            <div class="card-icon"><i class="fas fa-bullhorn"></i></div>
+            <h3>الأخبار</h3>
+            <p>
+                {% if current_user.can_post_news() %}
+                انشر الإعلانات والمستجدات المهمة ليشاهدها جميع المستخدمين لحظيا.
+                {% else %}
+                تابع آخر الأخبار والإعلانات التي ينشرها طاقم الإرشاد.
+                {% endif %}
+            </p>
+            <a href="{{ url_for('news.index') }}" class="card-link">
+                {% if current_user.can_post_news() %}فتح الأخبار{% else %}عرض الأخبار{% endif %}
+            </a>
+        </article>
 
-        {% if current_user.role == 'admin' %}
-        <div class="feature-card admin-card">
+        {% if current_user.can_access_user_management() %}
+        <article class="feature-card admin-card">
             <div class="card-icon"><i class="fas fa-user-shield"></i></div>
-            <h3>لوحة تحكم المرشد</h3>
-            <p>إدارة بيانات الطلاب، الحسابات، ومتابعة الحالات الإرشادية.</p>
-            <a href="{{ url_for('auth.add_user') }}" class="card-link">إدارة الطلاب</a>
-        </div>
+            <h3>إدارة المستخدمين</h3>
+            <p>
+                {% if current_user.can_add_users() %}
+                أنشئ حسابات جديدة وراجع المستخدمين الحاليين وصلاحياتهم.
+                {% else %}
+                راجع المستخدمين الحاليين ونفذ ما تسمح به صلاحياتك من إجراءات.
+                {% endif %}
+            </p>
+            <a href="{{ url_for('auth.add_user') }}" class="card-link">فتح الإدارة</a>
+        </article>
         {% endif %}
-    </div>
+    </section>
 </div>
 {% endblock %}
-</body>
-</html>
