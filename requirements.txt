@@ -1,8 +1,8 @@
-Flask
-Flask-PyMongo
-Flask-Login
-Flask-SocketIO
-Flask-WTF
-Werkzeug
-certifi
-python-dotenv
+certifi==2025.6.15
+Flask==3.1.3
+Flask_Login==0.6.3
+flask_pymongo==3.0.1
+Flask_SocketIO==5.5.1
+flask_wtf==1.2.2
+pymongo==4.16.0
+python-dotenv==1.2.2
