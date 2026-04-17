@@ -34,8 +34,7 @@ def _build_default_mongo_uri():
     
     
     return _ensure_database_name(
-        f"mongodb+srv://{mongo_user}:{mongo_password}@ershad.rwxfiop.mongodb.net/mydb?retryWrites=true&w=majority"
-    )
+        f"mongodb+srv://{mongo_user}:{mongo_password}@ershad.rwxfiop.mongodb.net/?appName=Ershad")
 
 
 def _env_flag(name, default=False):
