@@ -64,7 +64,7 @@ body::after {
     padding-bottom: 6px;
 }
 
-.site-nav a::after {
+.site-nav a:not(.btn-logout)::after {
     content: "";
     position: absolute;
     right: 0;
@@ -380,6 +380,9 @@ body.motion-ready .site-header {
 body.motion-ready .hero-section {
     animation-delay: 0.06s;
 }
+
+
+
 
 @keyframes floatingBlob {
     0%,

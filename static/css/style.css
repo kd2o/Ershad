@@ -180,20 +180,11 @@ body {
     color: var(--primary-dark);
 }
 
-.btn-logout {
-    background: transparent;
-    color: var(--primary);
-    padding: 8px 18px;
-    border-radius: 50px;
-    text-decoration: none;
-    font-weight: bold;
-    border: 1px solid var(--primary);
-    transition: 0.3s;
-}
+
 
 .btn-logout:hover {
-    background: var(--primary);
-    color: white;
+    color: rgb(255, 255, 255);
+    background-color: var(--primary);
 }
 
 .btn-login {
@@ -207,7 +198,8 @@ body {
 }
 
 .btn-login:hover {
-    background: var(--primary-dark);
+    background: black;
+    color : white ; 
 }
 
 @media (max-width: 768px) {
@@ -424,7 +416,7 @@ body {
     font-weight: 600;
 }
 
-.site-nav a:hover {
+.site-nav a:not(.btn-logout):hover {
     color: var(--primary);
 }
 
@@ -987,11 +979,7 @@ body {
     transition: 0.3s;
 }
 
-.btn-logout:hover {
-    background: var(--primary);
-    color: white;
-}
-
+    
 .btn-login {
     background: var(--primary);
     color: white;
@@ -1002,9 +990,6 @@ body {
     transition: 0.3s;
 }
 
-.btn-login:hover {
-    background: var(--primary-dark);
-}
 
 @media (max-width: 768px) {
     .nav-menu {
