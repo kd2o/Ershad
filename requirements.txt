@@ -7,4 +7,5 @@ flask-wtf==1.2.2
 pymongo==4.16.0
 python-dotenv==1.2.2
 gunicorn
-eventlet>=0.40.3
+gevent==24.2.1
+gevent-websocket==0.10.1

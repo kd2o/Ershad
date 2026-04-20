@@ -1,3 +1,5 @@
+from gevent import monkey
+monkey.patch_all()
 import certifi
 
 from bson import ObjectId
@@ -12,9 +14,7 @@ from backend.config import Config
 db = PyMongo()
 login = LoginManager()
 csrf = CSRFProtect()
-socketio = SocketIO()
-
-
+socketio = SocketIO(cors_allowed_origins="*", async_mode='gevent')
 def _ensure_indexes():
     index_builders = (
         lambda: db.db.users.create_index("student_number", unique=True),
