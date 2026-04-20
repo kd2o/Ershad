@@ -20,10 +20,10 @@
         </div>
     </section>
 
-    <section class="features-grid">
-        <article class="feature-card">
+    <section class="features-grid " class="j-card">
+        <article style="border-top-color: var(--primary); background-color: var(--primary-soft);" class="feature-card"style="border-top-color: var(--primary);">
             <div class="card-icon"><i class="fas fa-calendar-alt"></i></div>
-            <h3>الجدول الدراسي</h3>
+            <h3 style="color: var(--primary-dark);">الجدول الدراسي</h3>
             <p>
                 {% if current_user.can_manage_schedule() %}
                 أضف المواد الدراسية ونظم المواعيد ثم راجعها من مكان واحد.
@@ -34,9 +34,9 @@
             <a href="{{ url_for('schedule.index') }}" class="card-link">عرض الجدول</a>
         </article>
 
-        <article class="feature-card highlight">
+        <article style="border-top-color: var(--primary); background-color: var(--primary-soft);" class="feature-card highlight" >
             <div class="card-icon"><i class="fas fa-comments"></i></div>
-            <h3>صندوق الرسائل</h3>
+            <h3 style="color: var(--primary-dark);">صندوق الرسائل</h3>
             <p>
                 {% if current_user.is_staff() %}
                 استقبل الطلبات المناسبة لدورك وابدأ الرد على الطلاب مباشرة.
@@ -49,9 +49,9 @@
             </a>
         </article>
 
-        <article class="feature-card">
+        <article class="feature-card news-card" style="border-top-color: var(--primary); background-color: var(--primary-soft);" >
             <div class="card-icon"><i class="fas fa-bullhorn"></i></div>
-            <h3>الأخبار</h3>
+            <h3 style="color: var(--primary-dark);">الأخبار</h3>
             <p>
                 {% if current_user.can_post_news() %}
                 انشر الإعلانات والمستجدات المهمة ليشاهدها جميع المستخدمين لحظيا.
@@ -65,7 +65,7 @@
         </article>
 
         {% if current_user.can_access_user_management() %}
-        <article class="feature-card admin-card">
+        <article class="feature-card admin-card" style="border-top-color: var(--primary);">
             <div class="card-icon"><i class="fas fa-user-shield"></i></div>
             <h3>إدارة المستخدمين</h3>
             <p>
@@ -79,5 +79,16 @@
         </article>
         {% endif %}
     </section>
+
+    <div class="last">
+        <br>
+        <br>
+        <h2 style="color: var(--primary-dark); text-align: center;">Ershad - تطبيق إرشاد</h2>
+        <br>
+        <p style="font-size: 1.6rem; ">ت هو منصة تساعد على تنظيم التواصل بين المرشد والطالب. يتيح للطلاب حجز جلسات وطرح استفساراتهم بسهولة، ويوفّر للمرشد أدوات لمتابعة الطلاب وإدارة المواعيد. الهدف هو تحسين الإرشاد ودعم النجاح الأكاديمي والنفسي.
+</p>
+</p>
+        
+    </div>
 </div>
 {% endblock %}

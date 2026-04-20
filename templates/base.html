@@ -16,6 +16,7 @@
     {% block head_extra %}{% endblock %}
   </head>
   <body>
+    <div id="menu-overlay"></div>
     <header class="site-header">
       <div class="site-header__inner">
         <a href="{{ url_for('main.home') }}" class="brand">إرشاد</a>
@@ -44,7 +45,8 @@
           <a
             href="{{ url_for('auth.login') }}"
             class="btn-login"
-            style="color: white"
+            id="btn-login"
+            
             >تسجيل الدخول</a
           >
           {% endif %}
@@ -69,17 +71,39 @@
       document.addEventListener("DOMContentLoaded", () => {
         const hamburger = document.getElementById("hamburger-btn");
         const navMenu = document.getElementById("site-nav");
+        const menuOverlay = document.getElementById("menu-overlay");
 
-        hamburger.addEventListener("click", () => {
+        // Toggle menu on hamburger click
+        hamburger.addEventListener("click", (e) => {
+          e.stopPropagation();
           navMenu.classList.toggle("active");
           hamburger.classList.toggle("open");
+          menuOverlay.classList.toggle("active");
         });
 
+        // Close menu when clicking on overlay
+        menuOverlay.addEventListener("click", () => {
+          navMenu.classList.remove("active");
+          hamburger.classList.remove("open");
+          menuOverlay.classList.remove("active");
+        });
+
+        // Close menu when clicking on a link
         document.querySelectorAll(".site-nav a").forEach((link) => {
           link.addEventListener("click", () => {
             navMenu.classList.remove("active");
             hamburger.classList.remove("open");
+            menuOverlay.classList.remove("active");
           });
+        });
+
+        // Close menu on escape key
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && navMenu.classList.contains("active")) {
+            navMenu.classList.remove("active");
+            hamburger.classList.remove("open");
+            menuOverlay.classList.remove("active");
+          }
         });
       });
     </script>

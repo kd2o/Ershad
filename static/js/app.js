@@ -47,14 +47,4 @@ document.addEventListener("DOMContentLoaded", () => {
             observer.observe(element);
         }
     }
-
-    for (const element of document.querySelectorAll(".panel, .feature-card, .service-card, .schedule-card")) {
-        element.addEventListener("pointermove", (event) => {
-            const bounds = element.getBoundingClientRect();
-            const offsetX = ((event.clientX - bounds.left) / bounds.width) * 100;
-            const offsetY = ((event.clientY - bounds.top) / bounds.height) * 100;
-            element.style.setProperty("--pointer-x", `${offsetX}%`);
-            element.style.setProperty("--pointer-y", `${offsetY}%`);
-        });
-    }
 });
