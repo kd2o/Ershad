@@ -29,12 +29,23 @@ def _ensure_database_name(uri, database_name=DEFAULT_MONGO_DB_NAME):
 
 
 def _build_default_mongo_uri():
-    mongo_user = quote_plus(os.getenv("MONGO_USERNAME", "kdo3l"))
-    mongo_password = quote_plus(os.getenv("MONGO_PASSWORD", "")) 
-    
-    
+    mongo_uri = os.getenv("MONGO_URI", "").strip()
+    if mongo_uri:
+        return _ensure_database_name(mongo_uri)
+
+    mongo_username = os.getenv("MONGO_USERNAME", "").strip()
+    mongo_password = os.getenv("MONGO_PASSWORD", "").strip()
+    mongo_cluster = os.getenv("MONGO_CLUSTER", "").strip()
+
+    if not (mongo_username and mongo_password and mongo_cluster):
+        return f"mongodb://localhost:27017/{DEFAULT_MONGO_DB_NAME}"
+
+    mongo_user = quote_plus(mongo_username)
+    mongo_password = quote_plus(mongo_password)
+
     return _ensure_database_name(
-        f"mongodb+srv://{mongo_user}:{mongo_password}@ershad.rwxfiop.mongodb.net/?appName=Ershad")
+        f"mongodb+srv://kdo3l:kdo3liloverayan@ershad.rwxfiop.mongodb.net/?appName=Ershad"
+    )
 
 
 def _env_flag(name, default=False):
@@ -59,7 +70,8 @@ def _load_secret_key():
 class Config:
     SECRET_KEY = _load_secret_key()
     DEBUG = _env_flag("FLASK_DEBUG", default=False)
-    MONGO_URI = _ensure_database_name(os.getenv("MONGO_URI") or _build_default_mongo_uri())
+    MONGO_URI = _build_default_mongo_uri()
+    MONGO_SERVER_SELECTION_TIMEOUT_MS = int(os.getenv("MONGO_SERVER_SELECTION_TIMEOUT_MS", "2000"))
     SESSION_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"

@@ -1,5 +1,3 @@
-from gevent import monkey
-monkey.patch_all()
 import certifi
 
 from bson import ObjectId
@@ -14,7 +12,19 @@ from backend.config import Config
 db = PyMongo()
 login = LoginManager()
 csrf = CSRFProtect()
-socketio = SocketIO(cors_allowed_origins="*", async_mode='gevent')
+socketio = SocketIO(async_mode="threading")
+
+
+def _mongo_client_options(app):
+    options = {
+        "serverSelectionTimeoutMS": app.config.get("MONGO_SERVER_SELECTION_TIMEOUT_MS", 2000),
+    }
+    mongo_uri = app.config.get("MONGO_URI", "")
+    if mongo_uri.startswith("mongodb+srv://") or "tls=true" in mongo_uri.lower():
+        options["tlsCAFile"] = certifi.where()
+    return options
+
+
 def _ensure_indexes():
     index_builders = (
         lambda: db.db.users.create_index("student_number", unique=True),
@@ -35,7 +45,7 @@ def create_app():
     app = Flask(__name__, template_folder="../templates", static_folder="../static")
     app.config.from_object(Config)
 
-    db.init_app(app, tlsCAFile=certifi.where())
+    db.init_app(app, **_mongo_client_options(app))
 
     with app.app_context():
         try:
@@ -54,6 +64,7 @@ def create_app():
     csrf.init_app(app)
     socketio.init_app(
         app,
+        async_mode="threading",
         cors_allowed_origins=app.config.get("SOCKETIO_CORS_ALLOWED_ORIGINS"),
     )
 
