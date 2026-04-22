@@ -93,12 +93,14 @@
     }
 
     function buildNewsMarkup(msg) {
+        const deleteButton = canPostNews ? `<button class="btn-delete" data-id="${escapeHtml(msg.id)}">حذف</button>` : '';
         return `
             <article class="news-message animate-in">
                 <div class="news-message__meta">
                     <strong>${escapeHtml(msg.author_name)}</strong>
                     <span class="news-role">${escapeHtml(msg.author_role_label)}</span>
                     <time>${escapeHtml(msg.timestamp)}</time>
+                    ${deleteButton}
                 </div>
                 <p class="news-message__body">${escapeHtml(msg.message)}</p>
             </article>
@@ -127,15 +129,34 @@
         elements.stream.scrollTop = elements.stream.scrollHeight;
     });
 
+    socket.on("news_message_deleted", (data) => {
+        const msgId = data.id;
+        newsMessages = newsMessages.filter(msg => msg.id !== msgId);
+        renderMessages();
+    });
+
     // أحداث الأدمن فقط
-    if (canPostNews && elements.button) {
-        elements.button.onclick = () => {
-            const val = elements.input.value.trim();
-            if (val) {
-                socket.emit("send_news_message", { message: val });
-                elements.input.value = "";
+    if (canPostNews) {
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('btn-delete')) {
+                const msgId = e.target.dataset.id;
+                socket.emit("delete_news_message", { id: msgId });
             }
-        };
+        });
+
+        elements.button.addEventListener('click', () => {
+            const message = elements.input.value.trim();
+            if (message) {
+                socket.emit("send_news_message", { message });
+                elements.input.value = '';
+                elements.counter.textContent = `0 / ${newsData.maxLength}`;
+            }
+        });
+
+        elements.input.addEventListener('input', () => {
+            const length = elements.input.value.length;
+            elements.counter.textContent = `${length} / ${newsData.maxLength}`;
+        });
     }
 
     renderMessages();

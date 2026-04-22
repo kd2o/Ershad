@@ -91,3 +91,23 @@ def handle_send_news_message(data):
     inserted = db.db.news_messages.insert_one(document)
     payload = _serialize_news_message({**document, "_id": inserted.inserted_id})
     emit("news_message", payload, room=NEWS_ROOM)
+
+
+@socketio.on("delete_news_message")
+def handle_delete_news_message(data):
+    if not current_user.is_authenticated:
+        return
+
+    if not current_user.can_post_news():
+        emit("news_error", {"message": "يمكن للطاقم فقط حذف الأخبار."}, to=request.sid)
+        return
+
+    message_id = str((data or {}).get("id", "")).strip()
+    if not message_id:
+        return
+
+    try:
+        db.db.news_messages.delete_one({"_id": ObjectId(message_id)})
+        emit("news_message_deleted", {"id": message_id}, room=NEWS_ROOM)
+    except Exception as e:
+        emit("news_error", {"message": "حدث خطأ أثناء حذف الخبر."}, to=request.sid)
