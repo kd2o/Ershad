@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+
+{% block title %}حول التطبيق | Ershad{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/about.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="about-hero-section">
+    <div class="bg-glow"></div>
+
+    <div class="about-container">
+        <header class="about-header">
+            <span class="badge-top">الرؤية والابتكار</span>
+            <h1>تطبيق <span class="gradient-text">إرشاد</span></h1>
+            <p>تطبيق صنع وعلي امتحانات شهرين.</p>
+        </header>
+
+        <div class="main-layout">
+            <div class="dev-card-premium">
+                <div class="card-glass-effect"></div>
+                <div class="profile-main">
+                    <div class="avatar-wrapper">
+                        <div class="avatar-ring"></div>
+                        <span class="avatar-emoji">👤</span>
+                    </div>
+                    <div class="profile-details">
+                        <p class="role-tag">المطور الرئيسي</p>
+                        <h2>يزن هندية</h2>
+                        <p class="dev-bio">Full Stack Developer</p>
+                    </div>
+                </div>
+                <div class="social-actions">
+                    <a href="https://github.com/kd2o" target="_blank" class="btn-github-premium">
+                        <i class="fab fa-github"></i>
+                        <span>GitHub Profile</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="info-side-grid">
+                <div class="glass-card feature-card">
+                    <div class="icon-box"><i class="fas fa-rocket"></i></div>
+                    <div class="text-content">
+                        <h3>فكرة المشروع</h3>
+                        <p style="color: black;">هو منصة تساعد على تنظيم التواصل بين المرشد والطالب. يتيح للطلاب حجز جلسات مع المرشد وطلاب اللجنة الارشادية وطرح استفساراتهم بسهولة، ويوفّر للمرشد أدوات لمتابعة الطلاب وإدارة المواعيد. الهدف هو تحسين الإرشاد ودعم النجاح الأكاديمي والنفسي. ومتابعة اخبار المدرسة بشكل فوري </p>
+                    </div>
+                </div>
+
+                <div class="glass-card tech-card">
+                    <div class="icon-box"><i class="fas fa-layer-group"></i></div>
+                    <div class="text-content">
+                        <h3>التقنيات المستخدمة</h3>
+                        <div class="modern-tags">
+                            <span class="tag"><i class="fab fa-python"></i> Python / Flask</span>
+                            <span class="tag"><i class="fas fa-database"></i> MongoDB</span>
+                            <span class="tag"><i class="fas fa-terminal"></i> Jinja2</span>
+                            <span class="tag"><i class="fab fa-js"></i> JavaScript</span>
+                            <span class="tag"><i class="fab fa-css3-alt"></i> Modern CSS</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ===== CSS الخرافي ===== */
+
+:root {
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.4);
+    --accent-gradient: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+}
+
+.about-hero-section {
+    position: relative;
+    min-height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 40px 20px;
+    background: var(--bg-color);
+}
+
+/* توهج في الخلفية */
+.bg-glow {
+    position: absolute;
+    top: -10%;
+    left: -10%;
+    width: 40%;
+    height: 60%;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.1) 0%, transparent 70%);
+    filter: blur(80px);
+    z-index: 0;
+}
+
+.about-container {
+    max-width: 1200px;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+}
+
+/* ===== Header ===== */
+.about-header {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.badge-top {
+    background: var(--primary-soft);
+    color: var(--primary);
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.about-header h1 {
+    font-size: 4rem;
+    font-weight: 900;
+    margin: 20px 0;
+    color: var(--text-main);
+}
+
+.gradient-text {
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.about-header p {
+    font-size: 1.3rem;
+    color: var(--text-muted);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* ===== Layout ===== */
+.main-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 30px;
+    align-items: stretch;
+}
+
+/* ===== Developer Card (Premium) ===== */
+.dev-card-premium {
+    position: relative;
+    background: white;
+    border-radius: 30px;
+    padding: 50px 30px;
+    text-align: center;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--glass-border);
+    transition: 0.4s;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.dev-card-premium:hover {
+    transform: translateY(-15px) scale(1.02);
+}
+
+.avatar-wrapper {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    margin: 0 auto 30px;
+}
+
+.avatar-ring {
+    position: absolute;
+    inset: -10px;
+    border: 2px dashed var(--primary-light);
+    border-radius: 50%;
+    animation: rotate 10s linear infinite;
+}
+
+@keyframes rotate { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+
+.avatar-emoji {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: var(--primary-soft);
+    font-size: 70px;
+    line-height: 140px;
+    border-radius: 50%;
+    z-index: 2;
+    position: relative;
+}
+
+.role-tag {
+    color: var(--primary);
+    font-weight: 800;
+    font-size: 0.9rem;
+}
+
+.dev-bio {
+    width: fit-content;
+    margin: 10px auto;
+    
+    background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
+    
+    border-radius: 50px;
+    
+    color: white;
+    padding: 8px 25px; 
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+    
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
+    
+    white-space: nowrap; 
+}
+
+.btn-github-premium {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: var(--text-main);
+    color: white;
+    padding: 15px 30px;
+    border-radius: 15px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: 0.3s;
+    margin-top: 20px;
+}
+
+.btn-github-premium:hover {
+    background: #000;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+/* ===== Side Cards ===== */
+.info-side-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 25px;
+    padding: 35px;
+    display: flex;
+    gap: 25px;
+    transition: 0.3s;
+}
+
+.glass-card:hover {
+    background: white;
+    transform: translateX(-10px); /* لأن الموقع عربي */
+}
+
+.icon-box {
+    width: 60px;
+    height: 60px;
+    background: var(--accent-gradient);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.modern-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.tag {
+    background: white;
+    border: 1px solid #e2e8f0;
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: 0.3s;
+}
+
+.tag i { color: var(--primary); }
+
+.tag:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: scale(1.1);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 992px) {
+    .main-layout { grid-template-columns: 1fr; }
+    .about-header h1 { font-size: 2.5rem; }
+    .glass-card { flex-direction: column; align-items: center; text-align: center; }
+}
+</style>
+{% endblock %}

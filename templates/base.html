@@ -34,8 +34,10 @@
           <a href="{{ url_for('news.index') }}">الأخبار</a>
           <a href="{{ url_for('messages.index') }}">الرسائل</a>
           <a href="{{ url_for('requests.index') }}">الطلبات</a>
+          <a href="{{ url_for('main.about') }}">حول التطبيق</a>
           {% if current_user.can_access_user_management() %}
           <a href="{{ url_for('auth.add_user') }}">إدارة المستخدمين</a>
+
           {% endif %}
           <a    href="{{ url_for('auth.logout') }}" class="btn-logout"
             

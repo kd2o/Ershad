@@ -8,17 +8,17 @@
 
 {% block content %}
 <section class="panel narrow">
-    <h1>Sign In</h1>
-    <p class="muted">Use the student name and student ID to access the dashboard.</p>
+    <h1>تسجيل الدخول</h1>
+    <p class="muted">يرجى ادخال اسم الطالب ورقم الطالب </p>
     <form method="POST" class="form-grid">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <label for="student_name">Student name</label>
+        <label for="student_name">اسم الطالب</label>
         <input id="student_name" name="student_name" type="text" autocomplete="name" maxlength="120" required>
 
-        <label for="student_number">Student ID</label>
+        <label for="student_number">رقم الطالب </label>
         <input id="student_number" name="student_number" type="text" inputmode="numeric" maxlength="32" required>
 
-        <button type="submit">Sign in</button>
+        <button type="submit">تسجيل الدخول</button>
     </form>
 </section>
 {% endblock %}
